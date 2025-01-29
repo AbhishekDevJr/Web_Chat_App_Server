@@ -5,11 +5,14 @@ from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
 from .serializers import CustomUserSerializer
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.authentication import TokenAuthentication
+from .models import CustomUser
 
 # Create your views here.
 
 class UserLoginView(APIView):
+    # authentication_classes = []
     permission_classes = [AllowAny]
     
     def post(self, request):
@@ -38,6 +41,7 @@ class UserLoginView(APIView):
         
 
 class UsersignupView(APIView):
+    # authentication_classes = []
     permission_classes = [AllowAny]
     
     def post(self, request, *args, **kwargs):
@@ -48,6 +52,49 @@ class UsersignupView(APIView):
                 serialized_data.save()
                 return Response(serialized_data.data, status=201)
             return Response({'error' : 'Bad Request', 'message' : serialized_data.errors}, status=400)
+        
+        except Exception as e:
+            return Response({'error' : 'Unhandled Exception'}, status=500)
+        
+class UserLogoutView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, *args, **kwargs):
+        try:
+            request.user.auth_token.delete()
+            
+            response = Response({'message' : 'Successfully Logged Out.'}, status = 200)
+            response.delete_cookie('auth_token')
+            
+            return response
+        
+        except Exception as e:
+            return Response({'error' : 'Unhandled Exception'}, status=500)
+        
+class UserSearchView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, *args, **kwargs):
+        try:
+            user_search_str = request.data['username']
+            
+            if user_search_str:
+                search_user = CustomUser.objects.filter(username = user_search_str).last()
+                user_data = CustomUserSerializer(search_user).data
+                
+                if user_data:
+                    return Response({
+                        'message' : 'Requested user Found.',
+                        'username' : user_data.username,
+                        'firstname' : user_data.firstname,
+                        'lastname' : user_data.lastname
+                    }, status=200)
+                else:
+                    return Response({'message' : 'No user fount for the Specified Username.'}, status=200)
+            else:
+                return Response({'message' : 'No Username found in the Request Payload.'}, status=400)
         
         except Exception as e:
             return Response({'error' : 'Unhandled Exception'}, status=500)
