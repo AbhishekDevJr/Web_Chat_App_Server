@@ -12,7 +12,7 @@ from .models import CustomUser
 # Create your views here.
 
 class UserLoginView(APIView):
-    # authentication_classes = []
+    authentication_classes = []
     permission_classes = [AllowAny]
     
     def post(self, request):
@@ -39,9 +39,8 @@ class UserLoginView(APIView):
         except Exception as e:
             return Response({'error' : 'Unhandled Exception'}, status=500)
         
-
 class UsersignupView(APIView):
-    # authentication_classes = []
+    authentication_classes = []
     permission_classes = [AllowAny]
     
     def post(self, request, *args, **kwargs):
@@ -81,15 +80,17 @@ class UserSearchView(APIView):
             user_search_str = request.data['username']
             
             if user_search_str:
-                search_user = CustomUser.objects.filter(username = user_search_str).last()
-                user_data = CustomUserSerializer(search_user).data
+                search_user = CustomUser.objects.filter(email__icontains = user_search_str).last()
                 
-                if user_data:
+                if search_user:
                     return Response({
-                        'message' : 'Requested user Found.',
-                        'username' : user_data.username,
-                        'firstname' : user_data.firstname,
-                        'lastname' : user_data.lastname
+                        'message' : 'Requested User Found.',
+                        'user_data' : {
+                        'username' : search_user.username,
+                        'email' : search_user.email,
+                        'firstname' : search_user.first_name if search_user.first_name else None,
+                        'lastname' : search_user.last_name if search_user.last_name else None   
+                        }
                     }, status=200)
                 else:
                     return Response({'message' : 'No user fount for the Specified Username.'}, status=200)
