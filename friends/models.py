@@ -9,8 +9,8 @@ class FriendRequestModel(models.Model):
     status = models.CharField(
         max_length=10,
         choices=[('pending', 'Pending'), ('accepted', 'Accepted'), ('rejected', 'Rejected')],
-        default='pending'
-    ),
+        default='Pending'
+    )
     timestamp = models.DateTimeField(auto_now_add=True)
     
     class Meta:
