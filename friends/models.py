@@ -18,3 +18,12 @@ class FriendRequestModel(models.Model):
         
     def __str__(self):
         return f"{self.sender} -> {self.receiver} ({self.status})"
+    
+    def accept_friend(self):
+        if self.status == 'pending':
+            self.status = 'accepted'
+            
+            self.sender.friends.add(self.receiver)
+            self.receiver.friends.add(self.sender)
+            self.save()
+            

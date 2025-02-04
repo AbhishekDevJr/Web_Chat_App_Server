@@ -54,3 +54,32 @@ class FriendRequestView(APIView):
                 return Response({'error' : 'UserId Not Found.'}, status=400)
         except Exception as e:
             return Response({'error' : 'Unhandled Exception', 'error_log' : f"{e}"}, status=500)
+        
+class FriendAcceptView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, *args, **kwargs):
+        try:
+            sender_email = request.user.email
+            receiver_email = request.data.get('email')
+            
+            if sender_email and receiver_email:
+                sender_user = CustomUser.objects.filter(email__icontains = sender_email).last()
+                receiver_user = CustomUser.objects.filter(email__icontains = receiver_email).last()
+                
+                if sender_user and receiver_user:
+                    friend_req_obj = FriendRequestModel.objects.filter(Q(sender=sender_user, receiver_user=receiver_user) | Q(sender=receiver_user, receiver=sender_user)).last()
+                    
+                    if friend_req_obj:
+                        pass
+                    else:
+                        return Response({'error' : f"Friend Request between {sender_user} & {receiver_user} not found."}, status=400)
+                    
+                else:
+                    return Response({'error' : 'User Not Found'}, status=400)
+            else:
+                return Response({'error' : 'Bad Request'}, status=400)
+            
+        except Exception as e:
+            return Response({'error' : 'Unhandled Exception', 'error_log' : f"{e}"}, status=500)
