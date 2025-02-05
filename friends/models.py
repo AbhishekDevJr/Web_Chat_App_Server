@@ -26,4 +26,5 @@ class FriendRequestModel(models.Model):
             self.sender.friends.add(self.receiver)
             self.receiver.friends.add(self.sender)
             self.save()
-            
+        
+        return self.status

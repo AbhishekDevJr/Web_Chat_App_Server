@@ -69,10 +69,18 @@ class FriendAcceptView(APIView):
                 receiver_user = CustomUser.objects.filter(email__icontains = receiver_email).last()
                 
                 if sender_user and receiver_user:
-                    friend_req_obj = FriendRequestModel.objects.filter(Q(sender=sender_user, receiver_user=receiver_user) | Q(sender=receiver_user, receiver=sender_user)).last()
+                    friend_req_obj = FriendRequestModel.objects.filter(Q(sender=sender_user, receiver=receiver_user) | Q(sender=receiver_user, receiver=sender_user)).last()
                     
                     if friend_req_obj:
-                        pass
+                        if friend_req_obj.status == 'pending':
+                            request_status = friend_req_obj.accept_friend()
+                            
+                            if request_status == 'accepted':
+                                return Response({'success' : f"Friend request accepted B/W {sender_user.email} & {receiver_user.email}"}, status=200)
+                            else:
+                                return Response({'error' : 'Error while accepting friend request.'}, status=500)
+                        else:
+                            return Response({'success' : f"Friend Request b/w {sender_email} & {receiver_email} already accepted"}, status=200)
                     else:
                         return Response({'error' : f"Friend Request between {sender_user} & {receiver_user} not found."}, status=400)
                     
