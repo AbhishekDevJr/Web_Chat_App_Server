@@ -73,18 +73,19 @@ class FriendAcceptView(APIView):
                     friend_req_obj = FriendRequestModel.objects.filter(Q(sender=sender_user, receiver=receiver_user) | Q(sender=receiver_user, receiver=sender_user)).last()
                     
                     if friend_req_obj:
-                        temp_frn_req_data = []
-                        friend_request_data = FriendRequestModel.objects.filter(receiver=sender_user, status='pending')
-                        for item in friend_request_data:
-                            temp_frn_req_data.append({
-                                'sender' : item.sender.email,
-                                'receiver' : item.receiver.email,
-                                'timestamp' : item.timestamp
-                            })
+                        temp_frn_req_data = []                        
                         
                         if friend_req_obj.status == 'pending':
                             request_status = friend_req_obj.accept_friend()
                             
+                            friend_request_data = FriendRequestModel.objects.filter(receiver=sender_user, status='pending')
+                            for item in friend_request_data:
+                                temp_frn_req_data.append({
+                                    'sender' : item.sender.email,
+                                    'receiver' : item.receiver.email,
+                                    'timestamp' : item.timestamp
+                                })
+
                             if request_status == 'accepted':
                                 return Response(
                                     {
@@ -92,6 +93,13 @@ class FriendAcceptView(APIView):
                                         'pending_requests' : temp_frn_req_data
                                     }, status=200)
                             else:
+                                friend_request_data = FriendRequestModel.objects.filter(receiver=sender_user, status='pending')
+                                for item in friend_request_data:
+                                    temp_frn_req_data.append({
+                                        'sender' : item.sender.email,
+                                        'receiver' : item.receiver.email,
+                                        'timestamp' : item.timestamp
+                                    })
                                 return Response({'error' : 'Error while accepting friend request.'}, status=500)
                         else:
                             return Response(
@@ -107,5 +115,24 @@ class FriendAcceptView(APIView):
             else:
                 return Response({'error' : 'Bad Request'}, status=400)
             
+        except Exception as e:
+            return Response({'error' : 'Unhandled Exception', 'error_log' : f"{e}"}, status=500)
+        
+class GetFriendRequestsView(APIView):
+    
+    authentication_classes=[TokenAuthentication]
+    permission_classes=[IsAuthenticated]
+    
+    def get(self, request, *args, **kwargs):
+        try:
+            friend_request_data = FriendRequestModel.objects.filter(receiver=request.user, status='pending')
+            
+            if friend_request_data.exists():
+                serialized_friend_request_data = FriendRequestModelSerializer(friend_request_data, many=True)
+                
+                return Response({'success' : f"Friend Request Data for {request.user.email}.", 'data' : serialized_friend_request_data})            
+            else:
+                return Response({'success' : f"No Friend Request Data found for {request.user.email}"})
+                
         except Exception as e:
             return Response({'error' : 'Unhandled Exception', 'error_log' : f"{e}"}, status=500)
