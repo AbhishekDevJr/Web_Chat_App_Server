@@ -63,20 +63,24 @@ class FriendAcceptView(APIView):
         try:
             sender_email = request.user.email
             receiver_email = request.data.get('email')
+            request_action = request.data.get('request_action')
             
-            if sender_email and receiver_email:
+            if sender_email and receiver_email and request_action:
                 sender_user = CustomUser.objects.filter(email__icontains = sender_email).last()
                 receiver_user = CustomUser.objects.filter(email__icontains = receiver_email).last()
                 
                 if sender_user and receiver_user:
-                    # Bug Alert : A Record shows in Pending even after Accepting, Because Fetching Pending Earlier
                     friend_req_obj = FriendRequestModel.objects.filter(Q(sender=sender_user, receiver=receiver_user) | Q(sender=receiver_user, receiver=sender_user)).last()
                     
                     if friend_req_obj:
-                        temp_frn_req_data = []                        
+                        temp_frn_req_data = []
                         
                         if friend_req_obj.status == 'pending':
-                            request_status = friend_req_obj.accept_friend()
+                            if request_action == 'accept':
+                                request_status = friend_req_obj.accept_friend()
+                            else:
+                                request_status = friend_req_obj.reject_friend()
+                                
                             
                             friend_request_data = FriendRequestModel.objects.filter(receiver=sender_user, status='pending')
                             for item in friend_request_data:
@@ -92,14 +96,12 @@ class FriendAcceptView(APIView):
                                         'success' : f"Friend request accepted B/W {sender_user.email} & {receiver_user.email}",
                                         'pending_requests' : temp_frn_req_data
                                     }, status=200)
+                            elif request_status == 'rejected':
+                                return Response({
+                                        'success' : f"Friend request rejected B/W {sender_user.email} & {receiver_user.email}",
+                                        'pending_requests' : temp_frn_req_data
+                                    }, status=200)
                             else:
-                                friend_request_data = FriendRequestModel.objects.filter(receiver=sender_user, status='pending')
-                                for item in friend_request_data:
-                                    temp_frn_req_data.append({
-                                        'sender' : item.sender.email,
-                                        'receiver' : item.receiver.email,
-                                        'timestamp' : item.timestamp
-                                    })
                                 return Response({'error' : 'Error while accepting friend request.'}, status=500)
                         else:
                             return Response(
