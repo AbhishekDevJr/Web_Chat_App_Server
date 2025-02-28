@@ -70,7 +70,7 @@ class FriendAcceptView(APIView):
                 receiver_user = CustomUser.objects.filter(email__icontains = receiver_email).last()
                 
                 if sender_user and receiver_user:
-                    friend_req_obj = FriendRequestModel.objects.filter(Q(sender=sender_user, receiver=receiver_user) | Q(sender=receiver_user, receiver=sender_user)).last()
+                    friend_req_obj = FriendRequestModel.objects.filter(Q(sender=sender_user, receiver=receiver_user, status__iexact='pending') | Q(sender=receiver_user, receiver=sender_user, status__iexact='pending')).last()
                     
                     if friend_req_obj:
                         temp_frn_req_data = []

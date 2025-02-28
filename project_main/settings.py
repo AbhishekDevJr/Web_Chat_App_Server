@@ -25,7 +25,14 @@ SECRET_KEY = 'django-insecure-5i4uwt)&c*h7tc$mc99=hm6dl&9088e3a7yqtp7i4i)yi&mx*-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['.vercel.app', 'localhost', '127.0.0.1']
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
 
 
 # Application definition
@@ -37,6 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
     'authentication',
     'rest_framework',
     'rest_framework.authtoken',
@@ -44,6 +52,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -80,10 +89,10 @@ WSGI_APPLICATION = 'project_main.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'web_chat_app_db',
-        'USER' : 'postgres',
-        'PASSWORD' : 'admin@123',
-        'HOST' : '127.0.0.1',
+        'NAME': 'neondb',
+        'USER' : 'neondb_owner',
+        'PASSWORD' : 'npg_d7MjHqLrv6mO',
+        'HOST' : 'ep-divine-tree-a81705og-pooler.eastus2.azure.neon.tech',
         'PORT' : '5432'
     }
 }
