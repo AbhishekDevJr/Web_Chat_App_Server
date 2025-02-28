@@ -22,7 +22,13 @@ class UserLoginView(APIView):
             
                 if user:
                     token, created = Token.objects.get_or_create(user=user)
-                    response = Response({'token' : token.key, 'createdAt' : created})
+                    response = Response({
+                        'title' : 'Authentication Successful',
+                        'msg' : 'User Successfully Authenticated',
+                        'token' : token.key, 
+                        'createdAt' : created,
+                        'friendList' : CustomUserSerializer(user).data
+                    })
                     response.set_cookie(
                         key="auth_token",
                         value=token.key,
@@ -33,11 +39,17 @@ class UserLoginView(APIView):
                     
                     return response
                 else:
-                    return Response({'error' : 'Invalid Credentials'}, status=400)
+                    return Response({
+                        'msg' : 'Invalid Credentials'
+                    }, status=400)
             else:
-                return Response({'error' : 'Bad Request'}, status=400)
+                return Response({
+                    'msg' : 'Bad Request'
+                }, status=400)
         except Exception as e:
-            return Response({'error' : 'Unhandled Exception'}, status=500)
+            return Response({
+                'msg' : 'Unhandled Exception'
+            }, status=500)
         
 class UsersignupView(APIView):
     authentication_classes = []
@@ -49,11 +61,21 @@ class UsersignupView(APIView):
             
             if serialized_data.is_valid():
                 serialized_data.save()
-                return Response(serialized_data.data, status=201)
-            return Response({'error' : 'Bad Request', 'message' : serialized_data.errors}, status=400)
+                return Response({
+                    "title" : "User Registered",
+                    "msg" : "User Registered Successfully.",
+                    "data" :serialized_data.data,
+                    }, status=201)
+            return Response({
+                'title' : 'Bad Request', 
+                'msg' : serialized_data.errors
+                }, status=400)
         
         except Exception as e:
-            return Response({'error' : 'Unhandled Exception'}, status=500)
+            return Response({
+                'title' : 'Unhandled Server Error',
+                'msg' : 'Unhandled Server Error'
+                }, status=500)
         
 class UserLogoutView(APIView):
     authentication_classes = [TokenAuthentication]
