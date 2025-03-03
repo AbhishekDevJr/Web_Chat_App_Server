@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from rest_framework.response import Response
-from rest_framework.authentication import TokenAuthentication
+from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from .models import FriendRequestModel
@@ -12,7 +12,7 @@ from authentication.models import CustomUser
 # Create your views here.
 
 class FriendRequestView(APIView):
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated]
     
     def post(self, request, *args, **kwargs):
@@ -30,7 +30,10 @@ class FriendRequestView(APIView):
                 )
                 
                 if friend_request.exists():
-                    return Response({'error' : f"A Request between {sender_user} & {receiver_user} already exists."}, status=200)
+                    return Response({
+                        'title' : 'Request Already Exists',
+                        'msg' : f"A Request between {sender_user} & {receiver_user} already exists."
+                    }, status=200)
                 else:
                     
                     friend_request_data = {
@@ -45,18 +48,28 @@ class FriendRequestView(APIView):
                     if friend_request_serialized.is_valid():
                         friend_request_serialized.save()
                         return Response({
-                            'success' : f"Successfully sent Friend Request from {sender_user} to {receiver_user}",
+                            'title' : 'Friend Request Sent',
+                            'msg' : f"Successfully sent Friend Request from {sender_user} to {receiver_user}",
                             'request_data' : friend_request_serialized.data
                         }, status=201)
                     else:
-                        return Response({'error' : 'Error creating Friend Request.', 'error_log' : friend_request_serialized.errors}, status=500)
+                        return Response({
+                            'title' : 'Error creating Friend Request',
+                            'msg' : 'Error creating Friend Request.', 'error_log' : friend_request_serialized.errors
+                        }, status=500)
             else:
-                return Response({'error' : 'UserId Not Found.'}, status=400)
+                return Response({
+                    'title' : 'UserId Not Found',
+                    'msg' : 'UserId Not Found.'
+                }, status=400)
         except Exception as e:
-            return Response({'error' : 'Unhandled Exception', 'error_log' : f"{e}"}, status=500)
+            return Response({
+                'title' : 'Unhandled Exception',
+                'msg' : 'Unhandled Exception', 'error_log' : f"{e}"
+            }, status=500)
         
 class FriendAcceptView(APIView):
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated]
     
     def post(self, request, *args, **kwargs):
@@ -91,38 +104,54 @@ class FriendAcceptView(APIView):
                                 })
 
                             if request_status == 'accepted':
-                                return Response(
-                                    {
-                                        'success' : f"Friend request accepted B/W {sender_user.email} & {receiver_user.email}",
+                                return Response({
+                                        'title' : 'Friend Request Accepted',
+                                        'msg' : f"Friend request accepted B/W {sender_user.email} & {receiver_user.email}",
                                         'pending_requests' : temp_frn_req_data
-                                    }, status=200)
+                                }, status=200)
                             elif request_status == 'rejected':
                                 return Response({
-                                        'success' : f"Friend request rejected B/W {sender_user.email} & {receiver_user.email}",
+                                        'title' : 'Friend Request Rejected',
+                                        'msg' : f"Friend request rejected B/W {sender_user.email} & {receiver_user.email}",
                                         'pending_requests' : temp_frn_req_data
-                                    }, status=200)
-                            else:
-                                return Response({'error' : 'Error while accepting friend request.'}, status=500)
-                        else:
-                            return Response(
-                                {
-                                    'success' : f"Friend Request b/w {sender_email} & {receiver_email} already accepted",
-                                    'pending_requests' : temp_frn_req_data
                                 }, status=200)
+                            else:
+                                return Response({
+                                    'title' : 'Error Accepting Friend Request',
+                                    'msg' : 'Error while accepting friend request.'
+                                }, status=500)
+                        else:
+                            return Response({
+                                    'title' : 'Friend Request Already Accepted',
+                                    'msg' : f"Friend Request b/w {sender_email} & {receiver_email} already accepted",
+                                    'pending_requests' : temp_frn_req_data
+                            }, status=200)
                     else:
-                        return Response({'error' : f"Friend Request between {sender_user} & {receiver_user} not found."}, status=400)
+                        return Response({
+                            'title' : 'Friend Request Not Found',
+                            'msg' : f"Friend Request between {sender_user} & {receiver_user} not found."
+                        }, status=400)
                     
                 else:
-                    return Response({'error' : 'User Not Found'}, status=400)
+                    return Response({
+                        'title' : 'User Not Found',
+                        'msg' : 'User Not Found'
+                    }, status=400)
             else:
-                return Response({'error' : 'Bad Request'}, status=400)
+                return Response({
+                    'title' : 'Bad Request',
+                    'msg' : 'Bad Request'
+                }, status=400)
             
         except Exception as e:
-            return Response({'error' : 'Unhandled Exception', 'error_log' : f"{e}"}, status=500)
+            return Response({
+                'title' : 'Unhandled Exception', 'error_log' : f"{e}",
+                'msg' : 'Unhandled Exception', 'error_log' : f"{e}"
+            }, status=500)
         
 class GetFriendRequestsView(APIView):
     
-    authentication_classes=[TokenAuthentication]
+    authentication_classes=[SessionAuthentication]
     permission_classes=[IsAuthenticated]
     
     def get(self, request, *args, **kwargs):
@@ -132,9 +161,17 @@ class GetFriendRequestsView(APIView):
             if friend_request_data.exists():
                 serialized_friend_request_data = FriendRequestModelSerializer(friend_request_data, many=True)
                 
-                return Response({'success' : f"Friend Request Data for {request.user.email}.", 'data' : serialized_friend_request_data})            
+                return Response({
+                    'title' : 'Request User Data',
+                    'msg' : f"Friend Request Data for {request.user.email}.", 'data' : serialized_friend_request_data
+                })            
             else:
-                return Response({'success' : f"No Friend Request Data found for {request.user.email}"})
+                return Response({
+                    'title' : 'No Friend Requests Found',
+                    'success' : f"No Friend Request Data found for {request.user.email}"
+                })
                 
         except Exception as e:
-            return Response({'error' : 'Unhandled Exception', 'error_log' : f"{e}"}, status=500)
+            return Response({
+                'error' : 'Unhandled Exception', 'error_log' : f"{e}"
+            }, status=500)

@@ -6,7 +6,7 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
 from .serializers import CustomUserSerializer
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.authentication import TokenAuthentication
+from rest_framework.authentication import SessionAuthentication
 from .models import CustomUser
 
 # Create your views here.
@@ -27,7 +27,7 @@ class UserLoginView(APIView):
                         'msg' : 'User Successfully Authenticated',
                         'token' : token.key, 
                         'createdAt' : created,
-                        'friendList' : CustomUserSerializer(user).data
+                        'currentUser' : CustomUserSerializer(user).data
                     })
                     response.set_cookie(
                         key="auth_token",
@@ -78,23 +78,29 @@ class UsersignupView(APIView):
                 }, status=500)
         
 class UserLogoutView(APIView):
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated]
     
     def post(self, request, *args, **kwargs):
         try:
             request.user.auth_token.delete()
             
-            response = Response({'message' : 'Successfully Logged Out.'}, status = 200)
+            response = Response({
+                'title' : 'Logged Out',
+                'message' : 'Logged Out Successfully.'
+            }, status = 200)
             response.delete_cookie('auth_token')
             
             return response
         
         except Exception as e:
-            return Response({'error' : 'Unhandled Exception'}, status=500)
+            return Response({
+                'title' : 'Unhandled Exception',
+                'message' : 'Unhandled Exception'
+            }, status=500)
         
 class UserSearchView(APIView):
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated]
     
     def post(self, request, *args, **kwargs):
