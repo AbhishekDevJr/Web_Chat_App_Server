@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from rest_framework.response import Response
-from rest_framework.authentication import SessionAuthentication
+from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from .models import FriendRequestModel
@@ -12,21 +12,27 @@ from authentication.models import CustomUser
 # Create your views here.
 
 class FriendRequestView(APIView):
-    authentication_classes = [SessionAuthentication]
+    # authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     
     def post(self, request, *args, **kwargs):
         try:
-            sender_user = request.user.email
-            receiver_user = request.data.get('email')
+            sender_user = request.user.username
+            receiver_user = request.data.get('username')
+            
+            if sender_user == receiver_user:
+                return Response({
+                    'title' : 'Self Friend Request',
+                    'msg' : 'Sending friend request to yourself is not allowed!' 
+                }, status=400)
             
             if sender_user and receiver_user:
                 
-                sender_pk = CustomUser.objects.get(email__icontains = sender_user).pk
-                receiver_pk = CustomUser.objects.get(email__icontains = receiver_user).pk
+                sender_pk = CustomUser.objects.get(username__icontains = sender_user).pk
+                receiver_pk = CustomUser.objects.get(username__icontains = receiver_user).pk
                 
                 friend_request = FriendRequestModel.objects.filter(
-                    Q(sender_id=sender_pk, receiver_id=receiver_pk) | Q(sender_id=receiver_pk, receiver_id=sender_pk)
+                    Q(sender_id=sender_pk, receiver_id=receiver_pk, status__in=['pending', 'rejected', 'accepted']) | Q(sender_id=receiver_pk, receiver_id=sender_pk, status__in=['pending', 'rejected', 'accepted'])
                 )
                 
                 if friend_request.exists():
@@ -69,13 +75,13 @@ class FriendRequestView(APIView):
             }, status=500)
         
 class FriendAcceptView(APIView):
-    authentication_classes = [SessionAuthentication]
+    # authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     
     def post(self, request, *args, **kwargs):
         try:
-            sender_email = request.user.email
-            receiver_email = request.data.get('email')
+            receiver_email = request.user.username
+            sender_email = request.data.get('username')
             request_action = request.data.get('request_action')
             
             if sender_email and receiver_email and request_action:
@@ -90,30 +96,48 @@ class FriendAcceptView(APIView):
                         
                         if friend_req_obj.status == 'pending':
                             if request_action == 'accept':
-                                request_status = friend_req_obj.accept_friend()
+                                request_status, friend_qs = friend_req_obj.accept_friend()
                             else:
-                                request_status = friend_req_obj.reject_friend()
+                                request_status, friend_qs = friend_req_obj.reject_friend()
                                 
                             
                             friend_request_data = FriendRequestModel.objects.filter(receiver=sender_user, status='pending')
+                            friend_list = []
                             for item in friend_request_data:
                                 temp_frn_req_data.append({
                                     'sender' : item.sender.email,
                                     'receiver' : item.receiver.email,
                                     'timestamp' : item.timestamp
                                 })
-
                             if request_status == 'accepted':
+                                
+                                for friend in friend_qs:
+                                    friend_list.append({
+                                        'username' : friend.username if friend.username else None,
+                                        'first_name' : friend.first_name if friend.first_name else None,
+                                        'last_name' : friend.last_name if friend.last_name else None
+                                    })
+                                
                                 return Response({
                                         'title' : 'Friend Request Accepted',
                                         'msg' : f"Friend request accepted B/W {sender_user.email} & {receiver_user.email}",
-                                        'pending_requests' : temp_frn_req_data
+                                        'pending_requests' : temp_frn_req_data,
+                                        'friendList' : friend_list
+                                        
                                 }, status=200)
                             elif request_status == 'rejected':
+                                for friend in friend_qs:
+                                    friend_list.append({
+                                        'username' : friend.username if friend.username else None,
+                                        'first_name' : friend.first_name if friend.first_name else None,
+                                        'last_name' : friend.last_name if friend.last_name else None
+                                    })
+                                
                                 return Response({
                                         'title' : 'Friend Request Rejected',
                                         'msg' : f"Friend request rejected B/W {sender_user.email} & {receiver_user.email}",
-                                        'pending_requests' : temp_frn_req_data
+                                        'pending_requests' : temp_frn_req_data,
+                                        'friendList' : friend_list
                                 }, status=200)
                             else:
                                 return Response({
@@ -151,7 +175,7 @@ class FriendAcceptView(APIView):
         
 class GetFriendRequestsView(APIView):
     
-    authentication_classes=[SessionAuthentication]
+    # authentication_classes=[TokenAuthentication]
     permission_classes=[IsAuthenticated]
     
     def get(self, request, *args, **kwargs):
@@ -159,12 +183,21 @@ class GetFriendRequestsView(APIView):
             friend_request_data = FriendRequestModel.objects.filter(receiver=request.user, status='pending')
             
             if friend_request_data.exists():
-                serialized_friend_request_data = FriendRequestModelSerializer(friend_request_data, many=True)
+                curr_user_requests = []
+                
+                for friend_request in friend_request_data:
+                    temp_user = CustomUser.objects.filter(id=friend_request.sender.pk).last()
+                    curr_user_requests.append({
+                        'firstName' : temp_user.first_name if temp_user.first_name else None,
+                        'lastName' : temp_user.last_name if temp_user.last_name else None,
+                        'username' : temp_user.username if temp_user.username else None
+                    })
                 
                 return Response({
                     'title' : 'Request User Data',
-                    'msg' : f"Friend Request Data for {request.user.email}.", 'data' : serialized_friend_request_data
-                })            
+                    'msg' : f"Friend Request Data for {request.user.email}.", 
+                    'data' : curr_user_requests
+                })
             else:
                 return Response({
                     'title' : 'No Friend Requests Found',
