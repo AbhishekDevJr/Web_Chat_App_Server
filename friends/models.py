@@ -26,10 +26,11 @@ class FriendRequestModel(models.Model):
             self.sender.friends.add(self.receiver)
             self.receiver.friends.add(self.sender)
             self.save()
+        return self.status, self.receiver.friends.all()
             
     def reject_friend(self):
         if self.status == 'pending':
             self.status = 'rejected'
             self.save()
         
-        return self.status
+        return self.status, self.receiver.friends.all()

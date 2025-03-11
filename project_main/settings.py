@@ -31,9 +31,17 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+]
+
 CORS_ALLOW_CREDENTIALS = True
 
+SESSION_COOKIE_SECURE = False
 
+CSRF_COOKIE_SECURE = False
+
+CSRF_COOKIE_NAME = "csrftoken"
 
 # Application definition
 
@@ -86,13 +94,24 @@ WSGI_APPLICATION = 'project_main.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
+#         'NAME': 'neondb',
+#         'USER' : 'neondb_owner',
+#         'PASSWORD' : 'npg_d7MjHqLrv6mO',
+#         'HOST' : 'ep-divine-tree-a81705og-pooler.eastus2.azure.neon.tech',
+#         'PORT' : '5432'
+#     }
+# }
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'neondb',
-        'USER' : 'neondb_owner',
-        'PASSWORD' : 'npg_d7MjHqLrv6mO',
-        'HOST' : 'ep-divine-tree-a81705og-pooler.eastus2.azure.neon.tech',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'postgres',
+        'USER' : 'postgres',
+        'PASSWORD' : 'admin',
+        'HOST' : 'localhost',
         'PORT' : '5432'
     }
 }
@@ -120,7 +139,7 @@ AUTH_USER_MODEL = 'authentication.CustomUser'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES' : [
-        'rest_framework.authentication.TokenAuthentication'
+        'project_main.authentication.CustomTokenAuthentication'
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',

@@ -8,6 +8,7 @@ from .serializers import CustomUserSerializer
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from .models import CustomUser
+import json
 
 # Create your views here.
 
@@ -18,7 +19,12 @@ class UserLoginView(APIView):
     def post(self, request):
         try:
             if request.data.get('username') and request.data.get('password'):
+                friendlistres = []
                 user = authenticate(username=request.data.get('username'), password=request.data['password'])
+                friendlist = user.friends.all()
+                
+                for friend in friendlist:
+                    friendlistres.append(CustomUserSerializer(friend).data)
             
                 if user:
                     token, created = Token.objects.get_or_create(user=user)
@@ -27,8 +33,10 @@ class UserLoginView(APIView):
                         'msg' : 'User Successfully Authenticated',
                         'token' : token.key, 
                         'createdAt' : created,
-                        'friendList' : CustomUserSerializer(user).data
+                        'currentUser' : CustomUserSerializer(user).data,
+                        'friendList' : friendlistres
                     })
+                    
                     response.set_cookie(
                         key="auth_token",
                         value=token.key,
@@ -78,23 +86,38 @@ class UsersignupView(APIView):
                 }, status=500)
         
 class UserLogoutView(APIView):
-    authentication_classes = [TokenAuthentication]
+    # authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     
     def post(self, request, *args, **kwargs):
         try:
-            request.user.auth_token.delete()
+            token = request.user.auth_token
             
-            response = Response({'message' : 'Successfully Logged Out.'}, status = 200)
+            if token:
+                token.delete()
+            else:
+                return Response({
+                    'title' : 'Auth Token Not Found',
+                    'msg': 'No token found for this user.'
+                }, status=400)
+                    
+            response = Response({
+                'title' : 'Logged Out',
+                'msg' : 'Logged Out Successfully.'
+            }, status = 200)
             response.delete_cookie('auth_token')
+            response.delete_cookie('userinfo')
             
             return response
         
         except Exception as e:
-            return Response({'error' : 'Unhandled Exception'}, status=500)
+            return Response({
+                'title' : 'Unhandled Exception',
+                'msg' : 'Unhandled Exception'
+            }, status=500)
         
 class UserSearchView(APIView):
-    authentication_classes = [TokenAuthentication]
+    # authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     
     def post(self, request, *args, **kwargs):
@@ -106,7 +129,8 @@ class UserSearchView(APIView):
                 
                 if search_user:
                     return Response({
-                        'message' : 'Requested User Found.',
+                        'title' : 'User Found',
+                        'msg' : 'Requested User Found.',
                         'user_data' : {
                         'username' : search_user.username,
                         'email' : search_user.email,
@@ -115,9 +139,26 @@ class UserSearchView(APIView):
                         }
                     }, status=200)
                 else:
-                    return Response({'message' : 'No user fount for the Specified Username.'}, status=200)
+                    return Response({'msg' : 'No user fount for the Specified Username.'}, status=200)
             else:
-                return Response({'message' : 'No Username found in the Request Payload.'}, status=400)
+                return Response({'msg' : 'No Username found in the Request Payload.'}, status=400)
         
         except Exception as e:
-            return Response({'error' : 'Unhandled Exception'}, status=500)
+            return Response({'msg' : 'Unhandled Exception'}, status=500)
+        
+class UserCheckAuthView(APIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, *args, **kwargs):
+        try:
+            return Response({
+                'title' : 'Auth Check',
+                'msg' : 'User is Authenticated'
+            },status=200)
+        
+        except Exception as e:
+            return Response({
+                'title' : 'Unhandled Server Error',
+                'msg' : 'Unhandled Server Error'
+            }, status=500)
