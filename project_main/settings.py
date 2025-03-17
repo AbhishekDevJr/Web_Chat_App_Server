@@ -33,10 +33,28 @@ ALLOWED_HOSTS = ['web-chat-app-server-5ga9.onrender.com', 'localhost', '127.0.0.
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "https://exclusivemessengerclient.vercel.app"
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
+    "https://exclusivemessengerclient.vercel.app"
+]
+
+CORS_ALLOW_HEADERS = [
+    "content-type",
+    "authorization",
+    "x-csrftoken",
+    "x-requested-with",
+]
+
+CORS_ALLOW_METHODS = [
+    "GET",
+    "POST",
+    "PUT",
+    "PATCH",
+    "DELETE",
+    "OPTIONS"
 ]
 
 CORS_ALLOW_CREDENTIALS = True
