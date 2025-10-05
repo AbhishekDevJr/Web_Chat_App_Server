@@ -36,6 +36,8 @@ CORS_ALLOWED_ORIGINS = [
     "https://exclusivemessengerclient.vercel.app"
 ]
 
+CORS_ALLOW_CREDENTIALS = True
+
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
     "https://exclusivemessengerclient.vercel.app"
@@ -164,7 +166,7 @@ AUTH_USER_MODEL = 'authentication.CustomUser'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES' : [
-        'project_main.authentication.CustomTokenAuthentication'
+        'rest_framework.authentication.TokenAuthentication'
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',

@@ -9,6 +9,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from .models import CustomUser
 import json
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth import authenticate, login
 
 # Create your views here.
 
@@ -28,10 +30,11 @@ class UserLoginView(APIView):
             
                 if user:
                     token, created = Token.objects.get_or_create(user=user)
+                    login(request, user)
                     response = Response({
                         'title' : 'Authentication Successful',
                         'msg' : 'User Successfully Authenticated',
-                        'token' : token.key, 
+                        'token' : token.key,
                         'createdAt' : created,
                         'currentUser' : CustomUserSerializer(user).data,
                         'friendList' : friendlistres
@@ -40,7 +43,7 @@ class UserLoginView(APIView):
                     response.set_cookie(
                         key="auth_token",
                         value=token.key,
-                        httponly=True,
+                        httponly=False,
                         secure=False,
                         samesite='Lax'
                     )
@@ -86,7 +89,7 @@ class UsersignupView(APIView):
                 }, status=500)
         
 class UserLogoutView(APIView):
-    # authentication_classes = [TokenAuthentication]
+    authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     
     def post(self, request, *args, **kwargs):
@@ -117,7 +120,7 @@ class UserLogoutView(APIView):
             }, status=500)
         
 class UserSearchView(APIView):
-    # authentication_classes = [TokenAuthentication]
+    authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     
     def post(self, request, *args, **kwargs):

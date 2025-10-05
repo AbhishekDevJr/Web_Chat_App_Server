@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from rest_framework.response import Response
-from rest_framework.authentication import TokenAuthentication
+from rest_framework.authentication import  TokenAuthentication
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from .models import FriendRequestModel
@@ -12,7 +12,7 @@ from authentication.models import CustomUser
 # Create your views here.
 
 class FriendRequestView(APIView):
-    # authentication_classes = [TokenAuthentication]
+    authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     
     def post(self, request, *args, **kwargs):
@@ -75,7 +75,7 @@ class FriendRequestView(APIView):
             }, status=500)
         
 class FriendAcceptView(APIView):
-    # authentication_classes = [TokenAuthentication]
+    authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     
     def post(self, request, *args, **kwargs):
@@ -175,7 +175,7 @@ class FriendAcceptView(APIView):
         
 class GetFriendRequestsView(APIView):
     
-    # authentication_classes=[TokenAuthentication]
+    authentication_classes=[TokenAuthentication]
     permission_classes=[IsAuthenticated]
     
     def get(self, request, *args, **kwargs):
