@@ -48,6 +48,14 @@ class UserLoginView(APIView):
                         samesite='Lax'
                     )
                     
+                    response.set_cookie(
+                        key="userinfo",
+                        value=CustomUserSerializer(user).data,
+                        httponly=False,
+                        secure=False,
+                        samesite='Lax'
+                    )
+                    
                     return response
                 else:
                     return Response({
@@ -59,7 +67,8 @@ class UserLoginView(APIView):
                 }, status=400)
         except Exception as e:
             return Response({
-                'msg' : 'Unhandled Exception'
+                'msg' : 'Unhandled Exception',
+                'error': str(e)
             }, status=500)
         
 class UsersignupView(APIView):

@@ -3,10 +3,11 @@ from .models import CustomUser
 
 class CustomUserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
+    userid = serializers.IntegerField(read_only=True, source='id')
     
     class Meta:
         model = CustomUser
-        fields = ('username', 'email', 'password', 'first_name', 'last_name')
+        fields = ('userid', 'username', 'email', 'password', 'first_name', 'last_name')
         
     def validate_username(self, value):
         if CustomUser.objects.filter(username=value).exists():
