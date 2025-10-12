@@ -70,6 +70,8 @@ CSRF_COOKIE_NAME = "csrftoken"
 # Application definition
 
 INSTALLED_APPS = [
+    'channels',
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -115,7 +117,17 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'project_main.wsgi.application'
+# WSGI_APPLICATION = 'project_main.wsgi.application'
+ASGI_APPLICATION = 'project_main.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        # 'CONFIG': {
+        #     'hosts': [('127.0.0.1', 6379)]
+        # }
+    }
+}
 
 
 # Database
