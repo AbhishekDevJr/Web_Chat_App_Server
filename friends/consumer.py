@@ -35,6 +35,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
         data = json.loads(text_data)
         message = data['message']
         sender = data['sender']
+        message_type = data['message_type']
+        receiver = {
+            'userid': self.scope['user'].id,
+            'username': self.scope['user'].username,
+            'first_name': self.scope['user'].first_name,
+            'last_name': self.scope['user'].last_name
+        }
         
         # ADD MESSAGE STORING LOGIN IN DB HERE
         
@@ -43,15 +50,21 @@ class ChatConsumer(AsyncWebsocketConsumer):
             {
                 'type': 'chat_message',
                 'message': message,
-                'sender': sender
+                'sender': sender,
+                'message_type': message_type,
+                'receiver': receiver
             }
         )
         
     async def chat_message(self, event):
         message = event['message']
         sender = event['sender']
+        message_type = event['message_type']
+        receiver = event['receiver']
         
         await self.send(text_data=json.dumps({
             'message': message,
-            'sender': sender
+            'sender': sender,
+            'message_type': message_type,
+            'receiver': receiver
         }))
