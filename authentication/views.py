@@ -23,12 +23,14 @@ class UserLoginView(APIView):
             if request.data.get('username') and request.data.get('password'):
                 friendlistres = []
                 user = authenticate(username=request.data.get('username'), password=request.data['password'])
-                friendlist = user.friends.all()
                 
-                for friend in friendlist:
-                    friendlistres.append(CustomUserSerializer(friend).data)
             
                 if user:
+                    friendlist = user.friends.all()
+                
+                    for friend in friendlist:
+                        friendlistres.append(CustomUserSerializer(friend).data)
+                    
                     token, created = Token.objects.get_or_create(user=user)
                     login(request, user)
                     response = Response({
