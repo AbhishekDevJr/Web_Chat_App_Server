@@ -9,6 +9,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from .models import CustomUser
 import json
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth import authenticate, login
 
 # Create your views here.
 
@@ -21,17 +23,20 @@ class UserLoginView(APIView):
             if request.data.get('username') and request.data.get('password'):
                 friendlistres = []
                 user = authenticate(username=request.data.get('username'), password=request.data['password'])
-                friendlist = user.friends.all()
                 
-                for friend in friendlist:
-                    friendlistres.append(CustomUserSerializer(friend).data)
             
                 if user:
+                    friendlist = user.friends.all()
+                
+                    for friend in friendlist:
+                        friendlistres.append(CustomUserSerializer(friend).data)
+                    
                     token, created = Token.objects.get_or_create(user=user)
+                    login(request, user)
                     response = Response({
                         'title' : 'Authentication Successful',
                         'msg' : 'User Successfully Authenticated',
-                        'token' : token.key, 
+                        'token' : token.key,
                         'createdAt' : created,
                         'currentUser' : CustomUserSerializer(user).data,
                         'friendList' : friendlistres
@@ -40,7 +45,15 @@ class UserLoginView(APIView):
                     response.set_cookie(
                         key="auth_token",
                         value=token.key,
-                        httponly=True,
+                        httponly=False,
+                        secure=False,
+                        samesite='Lax'
+                    )
+                    
+                    response.set_cookie(
+                        key="userinfo",
+                        value=CustomUserSerializer(user).data,
+                        httponly=False,
                         secure=False,
                         samesite='Lax'
                     )
@@ -56,7 +69,8 @@ class UserLoginView(APIView):
                 }, status=400)
         except Exception as e:
             return Response({
-                'msg' : 'Unhandled Exception'
+                'msg' : 'Unhandled Exception',
+                'error': str(e)
             }, status=500)
         
 class UsersignupView(APIView):
@@ -86,7 +100,7 @@ class UsersignupView(APIView):
                 }, status=500)
         
 class UserLogoutView(APIView):
-    # authentication_classes = [TokenAuthentication]
+    authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     
     def post(self, request, *args, **kwargs):
@@ -117,7 +131,7 @@ class UserLogoutView(APIView):
             }, status=500)
         
 class UserSearchView(APIView):
-    # authentication_classes = [TokenAuthentication]
+    authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     
     def post(self, request, *args, **kwargs):

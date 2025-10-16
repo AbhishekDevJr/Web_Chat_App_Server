@@ -36,6 +36,8 @@ CORS_ALLOWED_ORIGINS = [
     "https://exclusivemessengerclient.vercel.app"
 ]
 
+CORS_ALLOW_CREDENTIALS = True
+
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
     "https://exclusivemessengerclient.vercel.app"
@@ -68,6 +70,8 @@ CSRF_COOKIE_NAME = "csrftoken"
 # Application definition
 
 INSTALLED_APPS = [
+    'channels',
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -113,7 +117,17 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'project_main.wsgi.application'
+# WSGI_APPLICATION = 'project_main.wsgi.application'
+ASGI_APPLICATION = 'project_main.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        # 'CONFIG': {
+        #     'hosts': [('127.0.0.1', 6379)]
+        # }
+    }
+}
 
 
 # Database
@@ -164,7 +178,7 @@ AUTH_USER_MODEL = 'authentication.CustomUser'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES' : [
-        'project_main.authentication.CustomTokenAuthentication'
+        'rest_framework.authentication.TokenAuthentication'
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
