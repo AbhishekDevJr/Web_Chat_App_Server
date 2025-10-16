@@ -66,10 +66,6 @@ CORS_ALLOW_METHODS = [
 
 CORS_ALLOW_CREDENTIALS = True
 
-SESSION_COOKIE_SECURE = False
-
-CSRF_COOKIE_SECURE = False
-
 CSRF_COOKIE_NAME = "csrftoken"
 
 # Application definition
