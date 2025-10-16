@@ -46,16 +46,16 @@ class UserLoginView(APIView):
                         key="auth_token",
                         value=token.key,
                         httponly=False,
-                        secure=False,
-                        samesite='Lax'
+                        secure=True,
+                        samesite='None'
                     )
                     
                     response.set_cookie(
                         key="userinfo",
                         value=CustomUserSerializer(user).data,
                         httponly=False,
-                        secure=False,
-                        samesite='Lax'
+                        secure=True,
+                        samesite='None'
                     )
                     
                     return response
