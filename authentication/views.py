@@ -3,6 +3,7 @@ from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
+from django.contrib.sessions.models import Session
 from django.contrib.auth import authenticate
 from .serializers import CustomUserSerializer
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -39,24 +40,9 @@ class UserLoginView(APIView):
                         'token' : token.key,
                         'createdAt' : created,
                         'currentUser' : CustomUserSerializer(user).data,
-                        'friendList' : friendlistres
+                        'friendList' : friendlistres,
+                        'userinfo': CustomUserSerializer(user).data
                     })
-                    
-                    response.set_cookie(
-                        key="auth_token",
-                        value=token.key,
-                        httponly=False,
-                        secure=True,
-                        samesite='None'
-                    )
-                    
-                    response.set_cookie(
-                        key="userinfo",
-                        value=CustomUserSerializer(user).data,
-                        httponly=False,
-                        secure=True,
-                        samesite='None'
-                    )
                     
                     return response
                 else:
@@ -105,24 +91,34 @@ class UserLogoutView(APIView):
     
     def post(self, request, *args, **kwargs):
         try:
-            token = request.user.auth_token
+            auth_token = request.headers.get('Authorization')
             
-            if token:
-                token.delete()
-            else:
+            if not auth_token or not auth_token.startswith('Token '):
                 return Response({
-                    'title' : 'Auth Token Not Found',
-                    'msg': 'No token found for this user.'
+                    'title': 'Auth Token Not Found.',
+                    'msg': 'No Auth Token found for current User.'
                 }, status=400)
-                    
-            response = Response({
-                'title' : 'Logged Out',
-                'msg' : 'Logged Out Successfully.'
-            }, status = 200)
-            response.delete_cookie('auth_token')
-            response.delete_cookie('userinfo')
+                        
+            token_key = auth_token.split(' ')[1]
+            token_obj = Token.objects.get(key=token_key).delete()
             
-            return response
+            return Response({
+            'title' : 'Logged Out',
+            'msg' : 'Logged Out Successfully.'
+        }, status = 200)
+                
+        
+        except Token.DoesNotExist as e:
+            return Response({
+                'title': 'Auth Token does not Exists.',
+                'mgs': str(e)
+            }, status=400)
+        
+        except Token.MultipleObjectsReturned as e:
+            return Response({
+                'title': 'Multiple Token data found for current Token Key.',
+                'msg': str(e)
+            }, status=400)
         
         except Exception as e:
             return Response({
