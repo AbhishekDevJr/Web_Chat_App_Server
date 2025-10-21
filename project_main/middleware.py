@@ -1,10 +1,10 @@
 from urllib.parse import parse_qs
 from channels.db import database_sync_to_async
+from django.contrib.auth.models import AnonymousUser
 
 @database_sync_to_async
 def get_user_from_token(token_key):
     from rest_framework.authtoken.models import Token
-    from django.contrib.auth.models import AnonymousUser
     try:
         token = Token.objects.get(key=token_key)
         return token.user
@@ -12,7 +12,7 @@ def get_user_from_token(token_key):
         return AnonymousUser()
     
 class TokenAuthMiddleware:
-    from django.contrib.auth.models import AnonymousUser
+
     def __init__(self, app):
         self.app = app
 
@@ -27,6 +27,6 @@ class TokenAuthMiddleware:
                 token_key = token_list[0]
                 scope["user"] = await get_user_from_token(token_key)
             else:
-                scope["user"] = self.AnonymousUser()
+                scope["user"] = AnonymousUser()
 
         return await self.app(scope, receive, send)
